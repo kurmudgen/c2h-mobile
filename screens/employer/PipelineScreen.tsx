@@ -68,14 +68,7 @@ export default function PipelineScreen({ navigation, route }: Props) {
   const loadPipeline = useCallback(async () => {
     const { data } = await supabase
       .from('matches')
-      .select(`
-        *,
-        candidate:candidates(
-          candidate_id, full_name, clearance_level, clearance_status,
-          availability_status, normalized_skills, years_total_experience,
-          location, seniority_level
-        )
-      `)
+      .select('*')
       .eq('job_id', jobId)
       .in('pipeline_status', [
         'active',
@@ -88,7 +81,23 @@ export default function PipelineScreen({ navigation, route }: Props) {
       ])
       .order('total_score', { ascending: false });
 
-    setMatches((data as MatchWithCandidate[]) ?? []);
+    const rawMatches = (data ?? []) as MatchWithCandidate[];
+
+    // Fetch candidate profiles via edge function (service role bypasses RLS)
+    const withCandidates = await Promise.all(
+      rawMatches.map(async (m) => {
+        try {
+          const { data: cd } = await supabase.functions.invoke('pipeline-action', {
+            body: { action: 'get-candidate', match_id: m.match_id },
+          });
+          return { ...m, candidate: cd?.candidate ?? null };
+        } catch {
+          return { ...m, candidate: null };
+        }
+      })
+    );
+
+    setMatches(withCandidates);
     setLoading(false);
     setRefreshing(false);
   }, [jobId]);

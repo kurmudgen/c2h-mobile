@@ -47,14 +47,18 @@ export default function CandidateDetailScreen({ navigation, route }: Props) {
     useCallback(() => {
       supabase
         .from('matches')
-        .select(`
-          *,
-          candidate:candidates(*)
-        `)
+        .select('*')
         .eq('match_id', matchId)
         .single()
-        .then(({ data }) => {
-          setMatch(data as MatchWithCandidate);
+        .then(async ({ data: matchData }) => {
+          if (!matchData) { setLoading(false); return; }
+
+          // Fetch candidate profile via edge function (service role bypasses RLS)
+          const { data: candData } = await supabase.functions.invoke('pipeline-action', {
+            body: { action: 'get-candidate', match_id: matchId },
+          });
+
+          setMatch({ ...matchData, candidate: candData?.candidate ?? null } as MatchWithCandidate);
           setLoading(false);
         });
     }, [matchId])
@@ -64,17 +68,16 @@ export default function CandidateDetailScreen({ navigation, route }: Props) {
     if (!match) return;
     setActioning(true);
 
-    const statusMap: Record<string, string> = {
-      interested: 'employer_interested',
-      pass: 'employer_passed',
-      request_interview: 'interview_requested',
+    const edgeFnAction: Record<string, string> = {
+      interested: 'employer-interested',
+      pass: 'employer-pass',
+      request_interview: 'employer-interview',
     };
 
     try {
-      const { error } = await supabase
-        .from('matches')
-        .update({ pipeline_status: statusMap[action] } as any)
-        .eq('match_id', match.match_id);
+      const { error } = await supabase.functions.invoke('pipeline-action', {
+        body: { match_id: match.match_id, action: edgeFnAction[action] },
+      });
       if (error) throw error;
 
       const messages: Record<string, string> = {
