@@ -8,7 +8,7 @@ export default function App() {
   return (
     <AuthProvider>
       <StatusBar style="light" />
-      {__DEV__ && <DevAutoLogin />}
+      <DevAutoLogin />
       <RootNavigator />
     </AuthProvider>
   );

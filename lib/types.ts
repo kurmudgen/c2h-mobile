@@ -22,6 +22,7 @@ export type MatchOutcome = 'pending' | 'submitted' | 'rejected' | 'interview' | 
 
 export type PipelineStatus =
   | 'pending_candidate_action'
+  | 'active'
   | 'candidate_accepted'
   | 'candidate_declined'
   | 'employer_reviewing'

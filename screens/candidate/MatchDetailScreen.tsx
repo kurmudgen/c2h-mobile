@@ -72,19 +72,23 @@ export default function MatchDetailScreen({ navigation, route }: Props) {
     if (!match) return;
     setActioning(true);
     try {
-      const { error } = await supabase.functions.invoke('pipeline-action', {
-        body: {
-          match_id: match.match_id,
-          action,
-          actor: 'candidate',
-        },
-      });
-      if (error) throw error;
+      if (action === 'accept') {
+        const { error } = await supabase.functions.invoke('pipeline-action', {
+          body: { match_id: match.match_id, action: 'activate' },
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('matches')
+          .update({ outcome: 'rejected', pipeline_status: 'candidate_declined' } as any)
+          .eq('match_id', match.match_id);
+        if (error) throw error;
+      }
       Alert.alert(
         action === 'accept' ? 'Match accepted!' : 'Match declined',
         action === 'accept'
           ? 'Your profile has been forwarded to the employer.'
-          : 'We\'ve noted your preference.',
+          : "We've noted your preference.",
         [{ text: 'OK', onPress: () => navigation.goBack() }]
       );
     } catch (e: any) {

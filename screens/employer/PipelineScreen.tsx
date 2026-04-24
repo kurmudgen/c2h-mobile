@@ -78,6 +78,7 @@ export default function PipelineScreen({ navigation, route }: Props) {
       `)
       .eq('job_id', jobId)
       .in('pipeline_status', [
+        'active',
         'employer_reviewing',
         'employer_interested',
         'interview_requested',

@@ -64,20 +64,17 @@ export default function CandidateDetailScreen({ navigation, route }: Props) {
     if (!match) return;
     setActioning(true);
 
-    const actionMap: Record<string, string> = {
+    const statusMap: Record<string, string> = {
       interested: 'employer_interested',
       pass: 'employer_passed',
       request_interview: 'interview_requested',
     };
 
     try {
-      const { error } = await supabase.functions.invoke('pipeline-action', {
-        body: {
-          match_id: match.match_id,
-          action,
-          actor: 'employer',
-        },
-      });
+      const { error } = await supabase
+        .from('matches')
+        .update({ pipeline_status: statusMap[action] } as any)
+        .eq('match_id', match.match_id);
       if (error) throw error;
 
       const messages: Record<string, string> = {
@@ -104,8 +101,8 @@ export default function CandidateDetailScreen({ navigation, route }: Props) {
     );
   }
 
-  const c = match.candidate;
-  const isActionable = ['employer_reviewing', 'candidate_accepted'].includes(
+  const c = match.candidate ?? null;
+  const isActionable = ['active', 'employer_reviewing', 'candidate_accepted'].includes(
     match.pipeline_status ?? ''
   );
 
@@ -124,8 +121,11 @@ export default function CandidateDetailScreen({ navigation, route }: Props) {
           </Text>
         </View>
         <View style={styles.headerMeta}>
-          <Text style={styles.candidateName}>{c?.full_name ?? 'Candidate'}</Text>
+          <Text style={styles.candidateName}>{c?.full_name ?? 'Matched Candidate'}</Text>
           {c?.location && <Text style={styles.location}>{c.location}</Text>}
+          {!c && (
+            <Text style={styles.location}>Profile details pending access policy</Text>
+          )}
           {c?.seniority_level && (
             <Text style={styles.seniority}>{c.seniority_level.toUpperCase()}</Text>
           )}
