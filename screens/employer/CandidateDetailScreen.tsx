@@ -47,18 +47,11 @@ export default function CandidateDetailScreen({ navigation, route }: Props) {
     useCallback(() => {
       supabase
         .from('matches')
-        .select('*')
+        .select(`*, candidate:candidates(*)`)
         .eq('match_id', matchId)
         .single()
-        .then(async ({ data: matchData }) => {
-          if (!matchData) { setLoading(false); return; }
-
-          // Fetch candidate profile via edge function (service role bypasses RLS)
-          const { data: candData } = await supabase.functions.invoke('pipeline-action', {
-            body: { action: 'get-candidate', match_id: matchId },
-          });
-
-          setMatch({ ...matchData, candidate: candData?.candidate ?? null } as MatchWithCandidate);
+        .then(({ data }) => {
+          setMatch(data as MatchWithCandidate);
           setLoading(false);
         });
     }, [matchId])
