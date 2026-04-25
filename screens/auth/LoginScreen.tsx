@@ -5,10 +5,11 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { colors, spacing, radius, font } from '../../lib/theme';
@@ -25,22 +26,34 @@ export default function LoginScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password) return;
+  const handleSignIn = async () => {
+    if (!email.trim() || !password) {
+      Alert.alert('Missing fields', 'Please enter your email and password.');
+      return;
+    }
     setLoading(true);
     const { error } = await signIn(email.trim().toLowerCase(), password);
     setLoading(false);
-    if (error) Alert.alert('Login failed', error);
+    if (error) {
+      Alert.alert('Sign in failed', error);
+    }
   };
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.inner}>
-        <Text style={styles.logo}>Cleared2Hire</Text>
-        <Text style={styles.tagline}>Defense-grade talent matching</Text>
+        <View style={styles.brand}>
+          <Image
+            source={require('../../assets/icon.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.appName}>Cleared2Hire</Text>
+          <Text style={styles.tagline}>Defense-grade talent matching</Text>
+        </View>
 
         <View style={styles.form}>
           <Text style={styles.label}>Email</Text>
@@ -53,9 +66,10 @@ export default function LoginScreen({ navigation }: Props) {
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            returnKeyType="next"
           />
 
-          <Text style={styles.label}>Password</Text>
+          <Text style={[styles.label, { marginTop: spacing.md }]}>Password</Text>
           <TextInput
             style={styles.input}
             value={password}
@@ -63,84 +77,92 @@ export default function LoginScreen({ navigation }: Props) {
             placeholder="••••••••"
             placeholderTextColor={colors.textMuted}
             secureTextEntry
+            returnKeyType="done"
+            onSubmitEditing={handleSignIn}
           />
 
           <TouchableOpacity
             style={[styles.btn, loading && styles.btnDisabled]}
-            onPress={handleLogin}
+            onPress={handleSignIn}
             disabled={loading}
+            activeOpacity={0.85}
           >
             {loading ? (
-              <ActivityIndicator color={colors.textInverse} />
+              <ActivityIndicator color="#fff" />
             ) : (
               <Text style={styles.btnText}>Sign In</Text>
             )}
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.linkBtn}
-            onPress={() => navigation.navigate('Signup')}
-          >
-            <Text style={styles.linkText}>
-              Don't have an account? <Text style={styles.linkHighlight}>Sign up</Text>
-            </Text>
-          </TouchableOpacity>
         </View>
+
+        <TouchableOpacity style={styles.linkBtn} onPress={() => navigation.navigate('Signup')}>
+          <Text style={styles.linkText}>
+            New to Cleared2Hire?{' '}
+            <Text style={styles.linkHighlight}>Request access</Text>
+          </Text>
+        </TouchableOpacity>
+
+        <Text style={styles.footer}>
+          Access is by invitation only.{'\n'}Contact your recruiter if you need help signing in.
+        </Text>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  root: { flex: 1, backgroundColor: colors.bg },
   inner: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxl,
   },
-  logo: {
-    fontSize: font.xxxl,
-    fontWeight: '700',
-    color: colors.primary,
-    textAlign: 'center',
-    marginBottom: spacing.xs,
-  },
+  brand: { alignItems: 'center', marginBottom: spacing.xxl + spacing.lg },
+  logo: { width: 80, height: 80, borderRadius: 18, marginBottom: spacing.md },
+  appName: { color: colors.text, fontSize: 28, fontWeight: '700', letterSpacing: 0.3 },
   tagline: {
-    fontSize: font.md,
     color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.xxl * 1.5,
-  },
-  form: { gap: spacing.sm },
-  label: {
     fontSize: font.sm,
-    fontWeight: '600',
+    marginTop: spacing.xs,
+    letterSpacing: 0.4,
+  },
+  form: { gap: spacing.xs },
+  label: {
     color: colors.textSecondary,
+    fontSize: font.xs,
+    fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginBottom: 2,
+    marginBottom: spacing.xs,
   },
   input: {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     color: colors.text,
     fontSize: font.md,
-    marginBottom: spacing.sm,
   },
   btn: {
+    marginTop: spacing.xl,
     backgroundColor: colors.primary,
     borderRadius: radius.md,
-    paddingVertical: spacing.md + 2,
+    paddingVertical: spacing.md + 4,
     alignItems: 'center',
-    marginTop: spacing.sm,
   },
   btnDisabled: { opacity: 0.6 },
   btnText: { color: '#fff', fontSize: font.md, fontWeight: '700' },
-  linkBtn: { alignItems: 'center', paddingVertical: spacing.sm },
+  linkBtn: { alignItems: 'center', paddingTop: spacing.xl },
   linkText: { color: colors.textSecondary, fontSize: font.sm },
   linkHighlight: { color: colors.primaryLight, fontWeight: '600' },
+  footer: {
+    marginTop: spacing.lg,
+    color: colors.textMuted,
+    fontSize: font.xs,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
 });

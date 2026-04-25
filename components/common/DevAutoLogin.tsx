@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 // Test build auto-login. Toggle ROLE to test employer flow.
-const ROLE: 'candidate' | 'employer' = 'candidate';
+const ROLE: 'candidate' | 'employer' = 'employer';
 const CREDS = {
   candidate: { email: 'test-candidate@cleared2hire.dev', password: 'TestPass123!' },
   employer:  { email: 'test-employer@cleared2hire.dev',  password: 'TestPass123!' },
